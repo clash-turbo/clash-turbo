@@ -1,0 +1,110 @@
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  go-version: '1.23'
+  go-stable: 'true'
+  artifact-retention-days: 5
+
+
+jobs:
+  build-release-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.go-version }}
+        stable: ${{ env.go-stable }}
+
+        # 获取依赖包
+    - name: Get Go Modules 📟
+      if: success()
+      shell: pwsh
+      run: |
+        go mod vendor -v
+  
+
+    - name: Build x64 Application 🛠
+      shell: pwsh
+      run: |
+        go build -ldflags "-H=windowsgui  -X main.Version=1.0 -X main.Env=prod" -o output/clash-turbo.exe
+
+
+    - name: Download geosite.dat and geoip.dat
+      shell: pwsh
+      run: |
+        mkdir -p output/work
+        Invoke-WebRequest -Uri "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat" -OutFile "output/work/geosite.dat"
+        Invoke-WebRequest -Uri "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat" -OutFile "output/work/geoip.dat"
+
+    - name: Get mihomo version and download zip
+      shell: pwsh
+      run: |
+       
+        # Get version from version.txt
+
+        $response = Invoke-WebRequest -Uri "https://github.com/MetaCubeX/mihomo/releases/latest/download/version.txt"
+        $version = [System.Text.Encoding]::UTF8.GetString($response.Content).Trim()
+        
+        # Construct download URL
+        $url = "https://github.com/MetaCubeX/mihomo/releases/download/$version/mihomo-windows-amd64-$version.zip"
+        
+        # Download the zip file
+        Invoke-WebRequest -Uri $url -OutFile "output/work/mihomo.zip"
+
+    - name: Extract mihomo zip
+      shell: pwsh
+      run: |
+        # Extract the zip file to output directory
+        Expand-Archive -Path "output/work/mihomo.zip" -DestinationPath "output/work" -Force
+        
+        # Optional: Clean up the downloaded zip file
+        Remove-Item "output/work/mihomo.zip"
+
+    - name: Download and extract zashboard dist.zip to ui folder
+      shell: pwsh
+      run: |
+
+        # 下载 dist.zip
+        Invoke-WebRequest -Uri "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip" -OutFile "output/dist.zip"
+        
+        # 解压到 output/ui 文件夹
+        Expand-Archive -Path "output/dist.zip" -DestinationPath "output/work" -Force
+        Rename-Item -Path "output/work/dist" -NewName "ui"
+        # 清理下载的 zip 文件
+        Remove-Item -Path "output/dist.zip" -Force
+
+    - name: Create zip package
+      shell: pwsh
+      run: |
+        mkdir zip
+        Compress-Archive -Path "output\*" -DestinationPath "zip/clash-turbo.zip"
+
+
+    - name: Upload Release Asset
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: zip/clash-turbo.zip
+        allowUpdates: true
+        tag: Release
+
+    - name: Upload to WebDAV
+      uses: bxb100/action-upload@main
+      with:
+        provider: webdav
+        provider_options: |
+          endpoint=${{ secrets.WEBDAV_ENDPOINT }}
+          username=${{ secrets.WEBDAV_USERNAME }}
+          password=${{ secrets.WEBDAV_PASSWORD }}
+          root=/auto/
+        include: 'zip/**'

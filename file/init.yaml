@@ -1,0 +1,79 @@
+mode: rule
+port: 7890
+mixed-port: 10801
+allow-lan: false
+log-level: info
+ipv6: false
+external-controller: 127.0.0.1:9090
+secret: ''
+
+external-ui: ui
+external-ui-url: 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip'
+
+unified-delay: true
+
+geodata-mode: true
+geo-auto-update: true
+geo-update-interval: 24
+geox-url:
+  geoip: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat"
+  geosite: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat"
+  mmdb: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country.mmdb"
+
+profile:
+  store-selected: true      # 存储 select 选择记录
+#   store-fake-ip: true        # 持久化 fake-ip
+
+tun:
+  enable: false
+  stack: mixed
+  device: Meta
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - "any:53"
+    - "tcp://any:53"
+  mtu: 9000
+
+dns:
+  enable: true
+  listen: :1053
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  prefer-h3: false
+  fake-ip-filter:
+  - '*.lan'
+  - '*.local'
+  - time.*.com
+  - ntp.*.com
+  - time.*.com
+  - +.market.xiaomi.com
+  - localhost.ptlogin2.qq.com
+  - '*.msftncsi.com'
+  - www.msftconnecttest.com
+  default-nameserver:
+  - 119.29.29.29
+  - 114.114.114.114
+  nameserver:
+  - 8.8.8.8
+  - 1.1.1.1
+  - https://dns.alidns.com/dns-query
+  - https://doh.pub/dns-query
+  nameserver-policy:
+    "geosite:cn,private":
+    - system
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+
+
+rules:
+  - GEOIP,lan,DIRECT
+  - GEOIP,private,DIRECT
+  - GEOIP,CN,DIRECT
+  - GEOSITE,private,DIRECT
+  - GEOSITE,CN,DIRECT
+  - GEOSITE,geolocation-!cn,🚀 节点选择
+  - MATCH,🐟 漏网之鱼
+
+
