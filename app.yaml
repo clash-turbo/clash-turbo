@@ -1,0 +1,36 @@
+# 参考: https://raw.githubusercontent.com/MetaCubeX/mihomo/refs/heads/Meta/docs/config.yaml
+# GitHubProxy: https://ghproxy.cfd/
+# proxy_type: 1->系统代理  2->tun 0->关闭
+proxy_type: 0
+github_proxy: ""
+http_proxy: ""
+core:
+    port: 10001
+    mixed_port: 10002
+    external_controller: 127.0.0.1:10003
+    secret: secret
+gui_port: 11000
+profiles:
+    - name: 示例
+      url: https://test.com
+      filters:
+        - name: 香港
+          type: select
+          filter: (?i)港|hk|hongkong|hong kong
+        - name: 日本
+          type: url-test
+          filter: (?i)台|tw|taiwan
+        - name: 新加坡
+          type: select
+          filter: (?i)新|sg|singapore
+prepend_rules:
+    - DOMAIN-SUFFIX,google.com,google
+
+cover_config:
+    dns: {}
+    tun: {}
+    sniffer: {}
+    rules: []
+    ipv6: false
+    allow-lan: false
+    unified-delay: true
